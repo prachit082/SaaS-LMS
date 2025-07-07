@@ -21,13 +21,19 @@ const CompanionsLibrary = async ({ searchParams }: SearchParams) => {
         </div>
       </section>
       <section className="companions-grid">
-        {companions.map((companion) => (
-          <CompanionCard
-            key={companion.id}
-            {...companion}
-            color={getSubjectColor(companion.subject)}
-          />
-        ))}
+        {companions.length === 0 ? (
+          <div className="text-center text-gray-500">
+            No Companions Available Yet. Start By Building One.
+          </div>
+        ) : (
+          companions.map((companion) => (
+            <CompanionCard
+              key={companion.id}
+              {...companion}
+              color={getSubjectColor(companion.subject)}
+            />
+          ))
+        )}
       </section>
     </main>
   );

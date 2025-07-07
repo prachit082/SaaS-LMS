@@ -13,7 +13,7 @@ export const createCompanion = async (formData: CreateCompanion) => {
         .insert({...formData, author })
         .select();
 
-    if(error || !data) throw new Error(error?.message || 'Failed to create a companion');
+    if(error) throw new Error(error.message);
 
     return data[0];
 }
@@ -115,10 +115,10 @@ export const newCompanionPermissions = async () => {
 
     if(has({ plan: 'pro' })) {
         return true;
-    } else if(has({ feature: "3_companion_limit" })) {
+    } else if(has({ feature: "3_active_companions" })) {
         limit = 3;
-    } else if(has({ feature: "10_companion_limit" })) {
-        limit = 10;
+    } else if(has({ feature: "8_active_companions" })) {
+        limit = 8;
     }
 
     const { data, error } = await supabase

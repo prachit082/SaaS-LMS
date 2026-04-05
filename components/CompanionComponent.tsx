@@ -94,7 +94,7 @@ const CompanionComponent = ({
       serverMessages: [],
     };
 
-    // @ts-expect-error
+    // @ts-expect-error - Need to fix types in vapi sdk
     vapi.start(configureAssistant(voice, style), assistantOverrides);
   };
 
@@ -119,7 +119,7 @@ const CompanionComponent = ({
                   ? "opacity-1001"
                   : "opacity-0",
                 callStatus === CallStatus.CONNECTING &&
-                  "opacity-100 animate-pulse"
+                  "opacity-100 animate-pulse",
               )}
             >
               <Image
@@ -134,7 +134,7 @@ const CompanionComponent = ({
             <div
               className={cn(
                 "absolute transition-opacity duration-1000",
-                callStatus === CallStatus.ACTIVE ? "opacity-100" : "opacity-0"
+                callStatus === CallStatus.ACTIVE ? "opacity-100" : "opacity-0",
               )}
             >
               <Lottie
@@ -178,7 +178,7 @@ const CompanionComponent = ({
             className={cn(
               "rounded-lg py-2 cursor-pointer transition-colors w-full text-white",
               callStatus === CallStatus.ACTIVE ? "bg-red-700" : "bg-primary",
-              callStatus === CallStatus.CONNECTING && "animate-pulse"
+              callStatus === CallStatus.CONNECTING && "animate-pulse",
             )}
             onClick={
               callStatus === CallStatus.ACTIVE ? handleDisconnect : handleCall
@@ -187,8 +187,8 @@ const CompanionComponent = ({
             {callStatus === CallStatus.ACTIVE
               ? "End Session"
               : callStatus === CallStatus.CONNECTING
-              ? "Connecting"
-              : "Start Session"}
+                ? "Connecting"
+                : "Start Session"}
           </button>
         </div>
       </section>

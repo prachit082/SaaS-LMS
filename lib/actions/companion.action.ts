@@ -1,141 +1,152 @@
-'use server';
+"use server";
 
-import {auth} from "@clerk/nextjs/server";
-import {createSupabaseClient} from "@/lib/supabase";
+import { auth } from "@clerk/nextjs/server";
+import { createSupabaseClient } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 
 export const createCompanion = async (formData: CreateCompanion) => {
-    const { userId: author } = await auth();
-    const supabase = createSupabaseClient();
+  const { userId: author } = await auth();
+  const supabase = createSupabaseClient();
 
-    const { data, error } = await supabase
-        .from('companions')
-        .insert({...formData, author })
-        .select();
+  const { data, error } = await supabase
+    .from("companions")
+    .insert({ ...formData, author })
+    .select();
 
-    if(error) throw new Error(error.message);
+  if (error) throw new Error(error.message);
 
-    return data[0];
-}
+  return data[0];
+};
 
-export const getAllCompanions = async ({ limit = 10, page = 1, subject, topic }: GetAllCompanions) => {
-    const supabase = createSupabaseClient();
+export const getAllCompanions = async ({
+  limit = 10,
+  page = 1,
+  subject,
+  topic,
+}: GetAllCompanions) => {
+  const { userId } = await auth();
 
-    let query = supabase.from('companions').select();
+  if (!userId) {
+    return [];
+  }
 
-    if(subject && topic) {
-        query = query.ilike('subject', `%${subject}%`)
-            .or(`topic.ilike.%${topic}%,name.ilike.%${topic}%`)
-    } else if(subject) {
-        query = query.ilike('subject', `%${subject}%`)
-    } else if(topic) {
-        query = query.or(`topic.ilike.%${topic}%,name.ilike.%${topic}%`)
-    }
+  const supabase = createSupabaseClient();
 
-    query = query.range((page - 1) * limit, page * limit - 1);
+  let query = supabase.from("companions").select().eq("author", userId);
 
-    const { data: companions, error } = await query;
+  if (subject && topic) {
+    query = query
+      .ilike("subject", `%${subject}%`)
+      .or(`topic.ilike.%${topic}%,name.ilike.%${topic}%`);
+  } else if (subject) {
+    query = query.ilike("subject", `%${subject}%`);
+  } else if (topic) {
+    query = query.or(`topic.ilike.%${topic}%,name.ilike.%${topic}%`);
+  }
 
-    if(error) throw new Error(error.message);
+  query = query.range((page - 1) * limit, page * limit - 1);
 
-    return companions;
-}
+  const { data: companions, error } = await query;
+
+  if (error) throw new Error(error.message);
+
+  return companions;
+};
 
 export const getCompanion = async (id: string) => {
-    const supabase = createSupabaseClient();
+  const supabase = createSupabaseClient();
 
-    const { data, error } = await supabase
-        .from('companions')
-        .select()
-        .eq('id', id);
+  const { data, error } = await supabase
+    .from("companions")
+    .select()
+    .eq("id", id);
 
-    if(error) return console.log(error);
+  if (error) return console.log(error);
 
-    return data[0];
-}
+  return data[0];
+};
 
 export const addToSessionHistory = async (companionId: string) => {
-    const { userId } = await auth();
-    const supabase = createSupabaseClient();
-    const { data, error } = await supabase.from('session_history')
-        .insert({
-            companion_id: companionId,
-            user_id: userId ? userId : null,
-        })
+  const { userId } = await auth();
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase.from("session_history").insert({
+    companion_id: companionId,
+    user_id: userId ? userId : null,
+  });
 
-    if(error) throw new Error(error.message);
+  if (error) throw new Error(error.message);
 
-    return data;
-}
+  return data;
+};
 
 export const getRecentSessions = async (limit = 10) => {
-    const supabase = createSupabaseClient();
-    const { data, error } = await supabase
-        .from('session_history')
-        .select(`companions:companion_id (*)`)
-        .order('created_at', { ascending: false })
-        .limit(limit)
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("session_history")
+    .select(`companions:companion_id (*)`)
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
-    if(error) throw new Error(error.message);
+  if (error) throw new Error(error.message);
 
-    return data.map(({ companions }) => companions);
-}
+  return data.map(({ companions }) => companions);
+};
 
 export const getUserSessions = async (userId: string, limit = 10) => {
-    const supabase = createSupabaseClient();
-    const { data, error } = await supabase
-        .from('session_history')
-        .select(`companions:companion_id (*)`)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit)
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("session_history")
+    .select(`companions:companion_id (*)`)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
-    if(error) throw new Error(error.message);
+  if (error) throw new Error(error.message);
 
-    return data.map(({ companions }) => companions);
-}
+  return data.map(({ companions }) => companions);
+};
 
 export const getUserCompanions = async (userId: string) => {
-    const supabase = createSupabaseClient();
-    const { data, error } = await supabase
-        .from('companions')
-        .select()
-        .eq('author', userId)
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("companions")
+    .select()
+    .eq("author", userId);
 
-    if(error) throw new Error(error.message);
+  if (error) throw new Error(error.message);
 
-    return data;
-}
+  return data;
+};
 
 export const newCompanionPermissions = async () => {
-    const { userId, has } = await auth();
-    const supabase = createSupabaseClient();
+  const { userId, has } = await auth();
+  const supabase = createSupabaseClient();
 
-    let limit = 0;
+  let limit = 0;
 
-    if(has({ plan: 'pro' })) {
-        return true;
-    } else if(has({ feature: "3_active_companions" })) {
-        limit = 3;
-    } else if(has({ feature: "8_active_companions" })) {
-        limit = 8;
-    }
+  if (has({ plan: "pro" })) {
+    return true;
+  } else if (has({ feature: "3_active_companions" })) {
+    limit = 3;
+  } else if (has({ feature: "8_active_companions" })) {
+    limit = 8;
+  }
 
-    const { data, error } = await supabase
-        .from('companions')
-        .select('id', { count: 'exact' })
-        .eq('author', userId)
+  const { data, error } = await supabase
+    .from("companions")
+    .select("id", { count: "exact" })
+    .eq("author", userId);
 
-    if(error) throw new Error(error.message);
+  if (error) throw new Error(error.message);
 
-    const companionCount = data?.length;
+  const companionCount = data?.length;
 
-    if(companionCount >= limit) {
-        return false
-    } else {
-        return true;
-    }
-}
+  if (companionCount >= limit) {
+    return false;
+  } else {
+    return true;
+  }
+};
 
 // Bookmarks
 export const addBookmark = async (companionId: string, path: string) => {

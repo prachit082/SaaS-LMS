@@ -1,23 +1,56 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Force the route to be dynamic so it actually runs every time
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
-  // Initialize a simple client just for this request
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Performing a lightweight query. Even if this returns 0 rows or an error,
-  // the connection to the DB counts as "activity".
-  const { data, error } = await supabase
-    .from("companions")
-    .select("id")
-    .limit(1);
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Supabase environment variables are missing",
+      },
+      { status: 500 },
+    );
+  }
 
-  if (error) throw error;
-  return NextResponse.json({ message: "Supabase is active", data });
+  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const { data, error } = await supabase
+      .from("companions")
+      .select("id")
+      .limit(1);
+
+    if (error) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "Supabase keep-alive query failed",
+          error: error.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: "Supabase is active",
+      rowsChecked: data?.length ?? 0,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Unexpected error while pinging Supabase",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    );
+  }
 }
